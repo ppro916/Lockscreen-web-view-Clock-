@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>माझे घड्याळ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        #date {
+            font-size: 18px;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+        
+        #clock {
+            font-size: 64px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .analog-clock {
+            width: 200px;
+            height: 200px;
+            border: 8px solid white;
+            border-radius: 50%;
+            position: relative;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom;
+            border-radius: 4px;
+        }
+        
+        .hour-hand {
+            width: 6px;
+            height: 50px;
+            background: #ff6b6b;
+            margin-left: -3px;
+        }
+        
+        .minute-hand {
+            width: 4px;
+            height: 70px;
+            background: #4ecdc4;
+            margin-left: -2px;
+        }
+        
+        .second-hand {
+            width: 2px;
+            height: 80px;
+            background: #ffd93d;
+            margin-left: -1px;
+        }
+        
+        .center-circle {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .mode-info {
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 480px) {
+            #clock {
+                font-size: 48px;
+            }
+            
+            .analog-clock {
+                width: 150px;
+                height: 150px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕒 माझे स्मार्ट घड्याळ</h1>
+        <div id="date"></div>
+        <div id="clock"></div>
+        
+        <div class="analog-clock">
+            <div class="hand hour-hand" id="hour-hand"></div>
+            <div class="hand minute-hand" id="minute-hand"></div>
+            <div class="hand second-hand" id="second-hand"></div>
+            <div class="center-circle"></div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="toggleMode()">मोड बदला</button>
+            <button onclick="toggleTheme()">थीम बदला</button>
+        </div>
+        
+        <div class="mode-info" id="mode-info">डिजिटल + ॲनालॉग मोड</div>
+    </div>
+
+    <script>
+        let is24Hour = true;
+        let isDarkTheme = true;
+        let analogVisible = true;
+
+        function updateTime() {
+            const now = new Date();
+            
+            // डिजिटल वेळ
+            let hours = now.getHours();
+            let minutes = now.getMinutes().toString().padStart(2, '0');
+            let seconds = now.getSeconds().toString().padStart(2, '0');
+            let ampm = '';
+            
+            if (!is24Hour) {
+                ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+            }
+            
+            const timeString = is24Hour 
+                ? `${hours}:${minutes}:${seconds}`
+                : `${hours}:${minutes}:${seconds} ${ampm}`;
+            
+            document.getElementById('clock').textContent = timeString;
+            
+            // तारीख
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            const dateString = now.toLocaleDateString('mr-IN', options);
+            document.getElementById('date').textContent = dateString;
+            
+            // ॲनालॉग वेळ
+            if (analogVisible) {
+                updateAnalogClock(now);
+            }
+        }
+
+        function updateAnalogClock(now) {
+            const hours = now.getHours() % 12;
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+            
+            const hourDeg = (hours * 30) + (minutes * 0.5);
+            const minuteDeg = (minutes * 6) + (seconds * 0.1);
+            const secondDeg = seconds * 6;
+            
+            document.getElementById('hour-hand').style.transform = `rotate(${hourDeg}deg)`;
+            document.getElementById('minute-hand').style.transform = `rotate(${minuteDeg}deg)`;
+            document.getElementById('second-hand').style.transform = `rotate(${secondDeg}deg)`;
+        }
+
+        function toggleMode() {
+            is24Hour = !is24Hour;
+            updateTime();
+        }
+
+        function toggleTheme() {
+            isDarkTheme = !isDarkTheme;
+            if (isDarkTheme) {
+                document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                document.body.style.background = 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)';
+            }
+        }
+
+        function toggleAnalog() {
+            analogVisible = !analogVisible;
+            document.querySelector('.analog-clock').style.display = analogVisible ? 'block' : 'none';
+            document.getElementById('mode-info').textContent = 
+                analogVisible ? 'डिजिटल + ॲनालॉग मोड' : 'फक्त डिजिटल मोड';
+        }
+
+        // PWA साठी Service Worker (ऑफलाइन काम करण्यासाठी)
+        if ('serviceWorker' in navigator) {
+            const swScript = `
+                const CACHE_NAME = 'pwa-clock-v1';
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(caches.open(CACHE_NAME));
+                });
+                self.addEventListener('fetch', (event) => {
+                    event.respondWith(
+                        caches.match(event.request).then((response) => {
+                            return response || fetch(event.request);
+                        })
+                    );
+                });
+            `;
+            
+            const blob = new Blob([swScript], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl)
+                .then(() => console.log('SW Registered'))
+                .catch(err => console.log('SW Error:', err));
+        }
+
+        // प्रारंभ
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // ऑफलाइन सूचना
+        window.addEventListener('online', () => {
+            console.log('ऑनलाइन आहेत');
+        });
+        
+        window.addEventListener('offline', () => {
+            console.log('ऑफलाइन आहेत - घड्याळ चालू राहील');
+        });
+    </script>
+</body>
+</html>
